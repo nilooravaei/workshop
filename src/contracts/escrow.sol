@@ -1,25 +1,23 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.19;
 
 /*
 Simple escrow contract that mediates disputes using a trusted arbiter
 */
 contract Escrow {
     
-    enum State {AWAITING_PAYMENT, AWAITING_DELIVERY, COMPLETE, REFUNDED}
+    enum State {AWAITING_PAYMENT, AWAITING_DELIVERY, COMPLETE}
     State public currentState;
     
-    modifier buyerOnly() { require(msg.sender == buyer || msg.sender == arbiter); _; }
-    modifier sellerOnly() { require(msg.sender == seller || msg.sender == arbiter); _; }
+    modifier buyerOnly() { require(msg.sender == buyer); _; }
+    modifier sellerOnly() { require(msg.sender == seller); _; }
     modifier inState(State expectedState) { require(currentState == expectedState); _; }
     
     address public buyer;
     address public seller;
-    address public arbiter;
     
-    function Escrow(address _buyer, address _seller, address _arbiter){
+    function Escrow(address _buyer, address _seller){
         buyer = _buyer;
         seller = _seller;
-        arbiter = _arbiter;
     }
     
     function confirmPayment() buyerOnly inState(State.AWAITING_PAYMENT) payable {
@@ -29,10 +27,5 @@ contract Escrow {
     function confirmDelivery() buyerOnly inState(State.AWAITING_DELIVERY) {
         seller.send(this.balance);
         currentState = State.COMPLETE;
-    }
-    
-    function refundBuyer() sellerOnly inState(State.AWAITING_DELIVERY) {
-        buyer.send(this.balance);
-        currentState = State.REFUNDED;
     }
 }
